@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extractor de Texto PowerPoint</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen p-4">
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-8 mt-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📊 Extractor de PowerPoint</h1>
+            <p class="text-gray-600">Extrae todo el texto de tu presentación de forma instantánea</p>
+        </div>
+
+        <!-- Main Container -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+
+            <!-- Upload Area -->
+            <div id="dropZone" class="border-3 border-dashed border-indigo-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-300 bg-blue-50">
+                <div class="space-y-3">
+                    <div class="text-5xl">📁</div>
+                    <h2 class="text-xl font-semibold text-gray-700">Arrastra tu archivo .pptx aquí</h2>
+                    <p class="text-gray-500">o haz clic para seleccionar un archivo</p>
+                    <input
+                        type="file"
+                        id="fileInput"
+                        accept=".pptx"
+                        class="hidden"
+                    >
+                </div>
+            </div>
+
+            <!-- Options -->
+            <div class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        id="includeNotes"
+                        class="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500"
+                    >
+                    <span class="text-gray-700">Incluir notas del orador</span>
+                </label>
+            </div>
+
+            <!-- Progress & Status -->
+            <div id="progressArea" class="hidden">
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <div class="flex items-center space-x-2 text-indigo-700">
+                        <div class="animate-spin text-xl">⏳</div>
+                        <span id="statusText">Procesando archivo...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Messages -->
+            <div id="errorArea" class="hidden">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <p class="text-red-700 font-semibold">⚠️ Error:</p>
+                    <p id="errorText" class="text-red-600 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Output Area -->
+            <div id="outputArea" class="hidden">
+                <div class="space-y-4">
+                    <!-- Copy & Download Buttons -->
+                    <div class="flex flex-wrap gap-3">
+                        <button
+                            id="copyBtn"
+                            class="flex-1 min-w-48 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
+                        >
+                            <span>📋</span>
+                            <span>Copiar todo al portapapeles</span>
+                        </button>
+                        <button
+                            id="downloadBtn"
+                            class="flex-1 min-w-48 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
+                        >
+                            <span>⬇️</span>
+                            <span>Descargar como .txt</span>
+                        </button>
+                        <button
+                            id="resetBtn"
+                            class="flex-1 min-w-48 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
+                        >
+                            🔄 Nuevo archivo
+                        </button>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-2 gap-4 md:grid-cols-3">
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="slideCount">0</div>
+                            <div class="text-sm text-gray-600">Diapositivas</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-600" id="charCount">0</div>
+                            <div class="text-sm text-gray-600">Caracteres</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="wordCount">0</div>
+                            <div class="text-sm text-gray-600">Palabras</div>
+                        </div>
+                    </div>
+
+                    <!-- Text Output -->
+                    <div class="mt-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">📝 Texto extraído:</label>
+                        <div id="textOutput" class="bg-gray-50 border border-gray-300 rounded-lg p-6 max-h-96 overflow-y-auto font-mono text-sm text-gray-800 whitespace-pre-wrap break-words"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="text-center text-sm text-gray-500 pt-4 border-t border-gray-200">
+                <p>✅ 100% privado - Todo se procesa en tu navegador</p>
+                <p class="mt-1">Soporta archivos PowerPoint (.pptx) hasta 50MB</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const progressArea = document.getElementById('progressArea');
+        const statusText = document.getElementById('statusText');
+        const errorArea = document.getElementById('errorArea');
+        const errorText = document.getElementById('errorText');
+        const outputArea = document.getElementById('outputArea');
+        const textOutput = document.getElementById('textOutput');
+        const copyBtn = document.getElementById('copyBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const includeNotes = document.getElementById('includeNotes');
+        const slideCount = document.getElementById('slideCount');
+        const charCount = document.getElementById('charCount');
+        const wordCount = document.getElementById('wordCount');
+
+        let extractedText = '';
+
+        // Drag & Drop
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        async function handleFile(file) {
+            if (!file.name.endsWith('.pptx')) {
+                showError('Por favor, selecciona un archivo .pptx válido');
+                return;
+            }
+
+            progressArea.classList.remove('hidden');
+            errorArea.classList.add('hidden');
+            outputArea.classList.add('hidden');
+            extractedText = '';
+
+            try {
+                statusText.textContent = 'Leyendo archivo...';
+                const zip = new JSZip();
+                const loaded = await zip.loadAsync(file);
+
+                statusText.textContent = 'Extrayendo diapositivas...';
+
+                const slides = [];
+                let slideIndex = 1;
+
+                // Extract slides
+                while (true) {
+                    const slidePath = `ppt/slides/slide${slideIndex}.xml`;
+                    if (!loaded.file(slidePath)) break;
+
+                    const slideContent = await loaded.file(slidePath).async('text');
+                    const slideText = extractTextFromSlide(slideContent);
+                    slides.push({ index: slideIndex, text: slideText });
+                    slideIndex++;
+                }
+
+                if (slides.length === 0) {
+                    throw new Error('No se encontraron diapositivas en el archivo');
+                }
+
+                statusText.textContent = `Procesando ${slides.length} diapositivas...`;
+
+                // Build output
+                let output = '';
+                slides.forEach((slide, idx) => {
+                    output += `--- DIAPOSITIVA ${slide.index} ---\n`;
+                    output += slide.text.trim() + '\n\n';
+
+                    // Add speaker notes if enabled
+                    if (includeNotes.checked) {
+                        const notePath = `ppt/noteSlides/noteSlide${slide.index}.xml`;
+                        if (loaded.file(notePath)) {
+                            // Notes will be extracted asynchronously if needed
+                        }
+                    }
+                });
+
+                // Extract notes if enabled
+                if (includeNotes.checked) {
+                    for (let i = 1; i <= slides.length; i++) {
+                        const notePath = `ppt/noteSlides/noteSlide${i}.xml`;
+                        if (loaded.file(notePath)) {
+                            try {
+                                const noteContent = await loaded.file(notePath).async('text');
+                                const noteText = extractTextFromSlide(noteContent);
+                                if (noteText.trim()) {
+                                    output += `[NOTAS DIAPOSITIVA ${i}]\n${noteText.trim()}\n\n`;
+                                }
+                            } catch (e) {
+                                console.log(`No se pudieron extraer las notas de la diapositiva ${i}`);
+                            }
+                        }
+                    }
+                }
+
+                extractedText = output;
+                displayResults(slides.length);
+            } catch (err) {
+                showError(`Error al procesar el archivo: ${err.message}`);
+                console.error(err);
+            } finally {
+                progressArea.classList.add('hidden');
+            }
+        }
+
+        function extractTextFromSlide(xmlContent) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+
+                if (xmlDoc.getElementsByTagName('parsererror').length > 0) {
+                    console.warn('XML parsing error');
+                    return '';
+                }
+
+                // Get all text elements in PowerPoint XML
+                const textElements = xmlDoc.getElementsByTagName('a:t');
+                let text = '';
+
+                for (let i = 0; i < textElements.length; i++) {
+                    const content = textElements[i].textContent.trim();
+                    if (content) {
+                        text += content + ' ';
+                    }
+                }
+
+                return text.replace(/\s+/g, ' ').trim();
+            } catch (err) {
+                console.error('Error extracting text:', err);
+                return '';
+            }
+        }
+
+        function displayResults(slides) {
+            outputArea.classList.remove('hidden');
+            textOutput.textContent = extractedText;
+            slideCount.textContent = slides;
+            charCount.textContent = extractedText.length.toLocaleString();
+            wordCount.textContent = extractedText.split(/\s+/).filter(w => w.length > 0).length.toLocaleString();
+
+            // Scroll to results
+            setTimeout(() => {
+                outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        function showError(message) {
+            errorArea.classList.remove('hidden');
+            errorText.textContent = message;
+            outputArea.classList.add('hidden');
+        }
+
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(extractedText);
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<span>✅</span><span>¡Copiado!</span>';
+                copyBtn.classList.add('bg-green-600');
+                copyBtn.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.classList.remove('bg-green-600');
+                    copyBtn.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+                }, 2000);
+            } catch (err) {
+                showError('No se pudo copiar al portapapeles');
+            }
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(extractedText));
+            element.setAttribute('download', 'texto_powerpoint.txt');
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            outputArea.classList.add('hidden');
+            errorArea.classList.add('hidden');
+            progressArea.classList.add('hidden');
+            extractedText = '';
+            includeNotes.checked = false;
+            dropZone.focus();
+        });
+    </script>
+</body>
+</html>
