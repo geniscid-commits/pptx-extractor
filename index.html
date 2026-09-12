@@ -192,6 +192,10 @@
                 const slides = [];
                 let slideIndex = 1;
 
+<<<<<<< HEAD
+=======
+                // Extract slides
+>>>>>>> 9057af953fdb4d8d2f5ddd96ba1504a43f62d909
                 while (true) {
                     const slidePath = `ppt/slides/slide${slideIndex}.xml`;
                     if (!loaded.file(slidePath)) break;
@@ -208,12 +212,30 @@
 
                 statusText.textContent = `Procesando ${slides.length} diapositivas...`;
 
+<<<<<<< HEAD
+=======
+                // Build output
+>>>>>>> 9057af953fdb4d8d2f5ddd96ba1504a43f62d909
                 let output = '';
                 slides.forEach((slide, idx) => {
                     output += `--- DIAPOSITIVA ${slide.index} ---\n`;
                     output += slide.text.trim() + '\n\n';
+<<<<<<< HEAD
                 });
 
+=======
+
+                    // Add speaker notes if enabled
+                    if (includeNotes.checked) {
+                        const notePath = `ppt/noteSlides/noteSlide${slide.index}.xml`;
+                        if (loaded.file(notePath)) {
+                            // Notes will be extracted asynchronously if needed
+                        }
+                    }
+                });
+
+                // Extract notes if enabled
+>>>>>>> 9057af953fdb4d8d2f5ddd96ba1504a43f62d909
                 if (includeNotes.checked) {
                     for (let i = 1; i <= slides.length; i++) {
                         const notePath = `ppt/noteSlides/noteSlide${i}.xml`;
@@ -251,6 +273,10 @@
                     return '';
                 }
 
+<<<<<<< HEAD
+=======
+                // Get all text elements in PowerPoint XML
+>>>>>>> 9057af953fdb4d8d2f5ddd96ba1504a43f62d909
                 const textElements = xmlDoc.getElementsByTagName('a:t');
                 let text = '';
 
@@ -275,6 +301,10 @@
             charCount.textContent = extractedText.length.toLocaleString();
             wordCount.textContent = extractedText.split(/\s+/).filter(w => w.length > 0).length.toLocaleString();
 
+<<<<<<< HEAD
+=======
+            // Scroll to results
+>>>>>>> 9057af953fdb4d8d2f5ddd96ba1504a43f62d909
             setTimeout(() => {
                 outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
