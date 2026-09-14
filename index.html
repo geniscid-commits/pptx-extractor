@@ -250,17 +250,26 @@
                     return '';
                 }
 
-                const textElements = xmlDoc.getElementsByTagName('a:t');
+                const paragraphs = xmlDoc.getElementsByTagName('a:p');
                 let text = '';
 
-                for (let i = 0; i < textElements.length; i++) {
-                    const content = textElements[i].textContent;
-                    if (content.trim()) {
-                        text += content + '\n';
+                for (let i = 0; i < paragraphs.length; i++) {
+                    const textElements = paragraphs[i].getElementsByTagName('a:t');
+                    let paragraphText = '';
+
+                    for (let j = 0; j < textElements.length; j++) {
+                        const content = textElements[j].textContent.trim();
+                        if (content) {
+                            paragraphText += content + ' ';
+                        }
+                    }
+
+                    if (paragraphText.trim()) {
+                        text += paragraphText.trim() + '\n';
                     }
                 }
 
-                return text.replace(/\n{2,}/g, '\n').replace(/\s+\n/g, '\n').trim();
+                return text.trim();
             } catch (err) {
                 console.error('Error extracting text:', err);
                 return '';
