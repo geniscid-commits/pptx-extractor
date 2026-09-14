@@ -210,7 +210,6 @@
 
                 let output = '';
                 slides.forEach((slide, idx) => {
-                    output += `--- DIAPOSITIVA ${slide.index} ---\n`;
                     output += slide.text.trim() + '\n\n';
                 });
 
@@ -255,13 +254,13 @@
                 let text = '';
 
                 for (let i = 0; i < textElements.length; i++) {
-                    const content = textElements[i].textContent.trim();
-                    if (content) {
-                        text += content + ' ';
+                    const content = textElements[i].textContent;
+                    if (content.trim()) {
+                        text += content + '\n';
                     }
                 }
 
-                return text.replace(/\s+/g, ' ').trim();
+                return text.replace(/\n{2,}/g, '\n').replace(/\s+\n/g, '\n').trim();
             } catch (err) {
                 console.error('Error extracting text:', err);
                 return '';
